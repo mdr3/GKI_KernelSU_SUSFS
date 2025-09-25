@@ -14,7 +14,7 @@ jobs:
     secrets: inherit
 
   release:
-    runs-on: self-hosted
+    runs-on: wsl2
     needs:
       - build-a12-5-10
 
