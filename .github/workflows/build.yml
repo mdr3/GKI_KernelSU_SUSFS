@@ -313,8 +313,6 @@ jobs:
           echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
           echo "CONFIG_UPROBES=y" >> "$defconfig"
           echo "CONFIG_UPROBE_EVENT=y" >> "$defconfig"
-          echo "CONFIG_NET_CLS_BPF=m" >> "$defconfig"
-          echo "CONFIG_NET_ACT_BPF=m" >> "$defconfig"
           echo "CONFIG_BPF_JIT=y" >> "$defconfig"
           echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
           echo "CONFIG_IKHEADERS=y" >> "$defconfig"
@@ -322,7 +320,6 @@ jobs:
           echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
           echo "CONFIG_BPF_LSM=y" >> "$defconfig"
           echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
-          echo "CONFIG_LTO=n" >> "$defconfig"
           echo "CONFIG_CFI_CLANG=n" >> "$defconfig"
           echo "CONFIG_CFI_PERMISSIVE=n" >> "$defconfig"
           echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
@@ -344,7 +341,6 @@ jobs:
           echo "CONFIG_PREEMPTIRQ_EVENTS=y" >> "$defconfig"
           echo "CONFIG_PROVE_LOCKING=n" >> "$defconfig"
           echo "CONFIG_LOCKDEP=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_SWARF4=y" >> "$defconfig"
           echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
           echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
           echo "CONFIG_NET_SCH_SFQ=y" >> "$defconfig"
@@ -361,7 +357,8 @@ jobs:
           echo "CONFIG_DEBUG_INFO_COMPRESSED_ZLIB=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_COMPRESSED_ZSTD=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_BTF_MODULES=y" >> "$defconfig"
-
+          echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
+          echo "CONFIG_PREEMPTION=y" >> "$defconfig"
 
 
 
