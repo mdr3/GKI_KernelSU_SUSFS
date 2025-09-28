@@ -352,9 +352,8 @@ jobs:
           echo "CONFIG_NET_ACT_POLICE=y" >> "$defconfig"
           echo "CONFIG_NET_ACT_GACT=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_SPLIT=n" >> "$defconfig"
-          echo "CONFIG_DUMMY=y" >> "$defconfig"
-          echo "CONFIG_DUMMY=y" >> "$defconfig"
-          echo "CONFIG_DUMMY=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_NONE=n" >> "$defconfig"
+
 
 
 
