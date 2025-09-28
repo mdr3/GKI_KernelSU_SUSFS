@@ -323,10 +323,9 @@ jobs:
           echo "CONFIG_BPF_LSM=y" >> "$defconfig"
           echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
           echo "CONFIG_LTO=n" >> "$defconfig"
-          echo "CONFIG_LTO_CLANG=n" >> "$defconfig"
           echo "CONFIG_CFI_CLANG=n" >> "$defconfig"
-          echo "CFI_PERMISSIVE=n" >> "$defconfig"
-          echo "CFI_CLANG=n" >> "$defconfig"
+          echo "CONFIG_CFI_PERMISSIVE=n" >> "$defconfig"
+          echo "CONFIG_CFI_CLANG=n" >> "$defconfig"
           echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
           echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
           echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
@@ -352,6 +351,9 @@ jobs:
           echo "CONFIG_NET_SCH_SFQ=y" >> "$defconfig"
           echo "CONFIG_NET_ACT_POLICE=y" >> "$defconfig"
           echo "CONFIG_NET_ACT_GACT=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_SPLIT=n" >> "$defconfig"
+          echo "CONFIG_DUMMY=y" >> "$defconfig"
+          echo "CONFIG_DUMMY=y" >> "$defconfig"
           echo "CONFIG_DUMMY=y" >> "$defconfig"
 
 
