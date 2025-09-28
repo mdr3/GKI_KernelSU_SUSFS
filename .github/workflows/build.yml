@@ -304,10 +304,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
           
           # Build Optimization Configuration
-          echo "CONFIG_LTO_CLANG_THIN=y" >> "$defconfig"
-          echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
-          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
-          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
+
           echo "CONFIG_KPROBES=y" >> "$defconfig"
           echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
           echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
@@ -316,7 +313,7 @@ jobs:
           echo "CONFIG_BPF_JIT=y" >> "$defconfig"
           echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
           echo "CONFIG_IKHEADERS=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_BTF=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_BTF=y" >> "$defconfig"
           echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
           echo "CONFIG_BPF_LSM=y" >> "$defconfig"
           echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
