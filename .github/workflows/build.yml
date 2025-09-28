@@ -325,7 +325,6 @@ jobs:
           echo "CONFIG_LTO=n" >> "$defconfig"
           echo "CONFIG_CFI_CLANG=n" >> "$defconfig"
           echo "CONFIG_CFI_PERMISSIVE=n" >> "$defconfig"
-          echo "CONFIG_CFI_CLANG=n" >> "$defconfig"
           echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
           echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
           echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
@@ -353,6 +352,16 @@ jobs:
           echo "CONFIG_NET_ACT_GACT=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_SPLIT=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_NONE=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF4=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_COMPRESSED_NONE=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_COMPRESSED_ZLIB=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_COMPRESSED_ZSTD=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_BTF_MODULES=y" >> "$defconfig"
+
 
 
 
