@@ -24,7 +24,7 @@ on:
 
 jobs:
   build-gki:
-    runs-on: kali_vm
+    runs-on: alibaba
     timeout-minutes: 120
     strategy:
       matrix:
