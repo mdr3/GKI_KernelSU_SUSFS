@@ -104,7 +104,7 @@ jobs:
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
           fi
           
-          $REPO --trace sync -c j$(nproc --ignore=3) --no-tags --fail-fast
+          $REPO --trace sync -c -j$(nproc --ignore=3) --no-tags --fail-fast
 
       - name: Extract Actual Sublevel for LTS Builds
         if: inputs.sub_level == 'X'
@@ -484,8 +484,8 @@ jobs:
             MAKE_ARGS="LLVM_IAS=1 $MAKE_ARGS"
           fi
           
-          make j$(nproc --ignore=3) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
-          make j$(nproc --ignore=3) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" || exit 1
+          make -j$(nproc --ignore=3) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
+          make -j$(nproc --ignore=3) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" || exit 1
 
       - name: Make check pass (copy generated modules.order into tracked path)
         run: |
