@@ -1,7 +1,7 @@
 name: Kernel Build Process
 permissions:
   contents: write
-  actions: write
+  actions: write 
 
 on:
   workflow_call:
@@ -31,6 +31,19 @@ jobs:
         build_type: ["make"]
 
     steps:
+      # # - name: Maximize Build Space
+        # uses: AdityaGarg8/remove-unwanted-software@v5
+        # with:
+          # remove-dotnet: 'true'          # Frees ~2 GB
+          # remove-android: 'true'         # Frees ~9 GB
+          # remove-haskell: 'true'         # Frees ~5.2 GB
+          # remove-codeql: 'true'          # Frees ~5.4 GB
+          # remove-docker-images: 'true'   # Frees ~3.2 GB
+          # remove-large-packages: 'true'  # Frees ~3.1 GB
+          # remove-swapfile: 'true'        # Frees ~4 GB
+          # remove-cached-tools: 'false'   # Avoid unless confirmed safe
+          # verbose: 'true'                # Enable detailed logging
+          
       - name: Set CONFIG Environment Variable
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -48,12 +61,8 @@ jobs:
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
-          if [ ! -d "kernel-build-tools" ]; then
-            git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
-          fi
-          if [ ! -d "mkbootimg" ]; then
-            git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg &
-          fi
+          git clone $AOSP_MIRROR/kernel/prebuilts/build-tools -b $BRANCH --depth 1 kernel-build-tools &
+          git clone $AOSP_MIRROR/platform/system/tools/mkbootimg -b $BRANCH --depth 1 mkbootimg &
           wait
           
           echo "AVBTOOL=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin/avbtool" >> $GITHUB_ENV
@@ -63,10 +72,8 @@ jobs:
           echo "PATH=$GITHUB_WORKSPACE/kernel-build-tools/linux-x86/bin:$PATH" >> $GITHUB_ENV
           
           mkdir -p ./git-repo
-          if [ ! -f "./git-repo/repo" ]; then
-            curl https://storage.googleapis.com/git-repo-downloads/repo > ./git-repo/repo
-            chmod a+rx ./git-repo/repo
-          fi
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ./git-repo/repo
+          chmod a+rx ./git-repo/repo
           echo "REPO=$GITHUB_WORKSPACE/./git-repo/repo" >> $GITHUB_ENV
 
       - name: Set boot sign key
@@ -82,15 +89,9 @@ jobs:
           ANYKERNEL_BRANCH="gki-2.0"
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           
-          if [ ! -d "AnyKernel3" ]; then
-            git clone https://github.com/WildKernels/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          fi
-          if [ ! -d "susfs4ksu" ]; then
-            git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
-          fi
-          if [ ! -d "kernel_patches" ]; then
-            git clone https://github.com/WildKernels/kernel_patches.git
-          fi
+          git clone https://github.com/WildKernels/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
+          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
+          git clone https://github.com/WildKernels/kernel_patches.git
 
       - name: Initialize and Sync Kernel Source
         run: |
@@ -175,12 +176,19 @@ jobs:
           # Apply KSU integration patches
           cd ./Wild_KSU
           cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
+          #cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/10_enable_susfs_for_ksu.patch ./
           patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
           
           # Apply compatibility fixes
           cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
           patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
           
+          ## Skip fix_rules.c.patch for Android 14 with kernel 6.1
+          #if [ "${{ inputs.android_version }}" != "android14" ] && [ "${{ inputs.kernel_version }}" != "6.1" ]; then
+          #  cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
+          #  patch -p1 --forward < fix_rules.c.patch
+          #fi
+
           cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_sucompat.c.patch ./
           patch -p1 --forward < fix_sucompat.c.patch
 
@@ -205,9 +213,11 @@ jobs:
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
             cd "$CONFIG/common/kernel/module"
+            #sed -i 's/pr_warn("%s: disagrees about version of symbol %s\\n"/pr_warn("%s: disagrees about version of symbol %s, but ignore...\\n"/' version.c
             sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' version.c
           else
             cd "$CONFIG/common/kernel"
+            #sed -i 's/pr_warn("%s: disagrees about version of symbol %s\\n"/pr_warn("%s: disagrees about version of symbol %s, but ignore...\\n"/' module.c
             sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' module.c
           fi
 
@@ -272,7 +282,6 @@ jobs:
           echo "CONFIG_IP_SET_HASH_NETNET=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETPORT=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> "$defconfig"
-          
           # SUSFS Configuration
           echo "CONFIG_KSU_SUSFS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> "$defconfig"
@@ -302,64 +311,50 @@ jobs:
           echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
-          echo "CONFIG_CFI_CLANG=y" >> "$defconfig"
-          echo "CONFIG_CFI_PERMISSIVE=y" >> "$defconfig"
-
-
           
-          
-          # eBPF and Debugging Configuration
-          echo "CONFIG_KPROBES=y" >> "$defconfig"
-          echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
-          echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
-          echo "CONFIG_UPROBES=y" >> "$defconfig"
-          echo "CONFIG_UPROBE_EVENT=y" >> "$defconfig"
-          echo "CONFIG_BPF_JIT=y" >> "$defconfig"
-          echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
-          echo "CONFIG_IKHEADERS=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_BTF=n" >> "$defconfig"
-          echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
-          echo "CONFIG_BPF_LSM=y" >> "$defconfig"
-          echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
-          echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
-          echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
-          echo "CONFIG_CHECKPOINT_RESTORE=y" >> "$defconfig"
-          echo "CONFIG_RANDOMIZE_BASE=n" >> "$defconfig"
-          echo "CONFIG_BPF=y" >> "$defconfig"
-          echo "CONFIG_HAVE_KPROBES=y" >> "$defconfig"
-          echo "CONFIG_KRETPROBES=y" >> "$defconfig"
-          echo "CONFIG_HAVE_KRETPROBES=y" >> "$defconfig"
-          echo "CONFIG_SHADOW_CALL_STACK=n" >> "$defconfig"
-          echo "CONFIG_ROP_PROTECTION_NONE=y" >> "$defconfig"
-          echo "CONFIG_FTRACE_SYSCALLS=y" >> "$defconfig"
-          echo "CONFIG_FUNCTION_TRACER=y" >> "$defconfig"
-          echo "CONFIG_HAVE_DYNAMIC_FTRACE=y" >> "$defconfig"
-          echo "CONFIG_DYNAMIC_FTRACE=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_PREEMPT=y" >> "$defconfig"
-          echo "CONFIG_PREEMPTIRQ_EVENTS=y" >> "$defconfig"
-          echo "CONFIG_PROVE_LOCKING=n" >> "$defconfig"
-          echo "CONFIG_LOCKDEP=n" >> "$defconfig"
-          echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
-          echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
-          echo "CONFIG_NET_SCH_SFQ=y" >> "$defconfig"
-          echo "CONFIG_NET_ACT_POLICE=y" >> "$defconfig"
-          echo "CONFIG_NET_ACT_GACT=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_SPLIT=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_NONE=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF4=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_COMPRESSED_NONE=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_COMPRESSED_ZLIB=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_COMPRESSED_ZSTD=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_BTF_MODULES=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
-          echo "CONFIG_PREEMPTION=y" >> "$defconfig"
-          echo "CONFIG_GCC_PLUGIN_RANDSTRUCT=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
+          # epbf
+            echo "CONFIG_KPROBES=y" >> "$defconfig"
+            echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
+            echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
+            echo "CONFIG_UPROBES=y" >> "$defconfig"
+            echo "CONFIG_UPROBE_EVENT=y" >> "$defconfig"
+            echo "CONFIG_NET_CLS_BPF=m" >> "$defconfig"
+            echo "CONFIG_NET_ACT_BPF=m" >> "$defconfig"
+            echo "CONFIG_BPF_JIT=y" >> "$defconfig"
+            echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
+            echo "CONFIG_IKHEADERS=y" >> "$defconfig"
+            echo "CONFIG_DEBUG_INFO_BTF=n" >> "$defconfig"
+            echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
+            echo "CONFIG_BPF_LSM=y" >> "$defconfig"
+            echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
+            echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
+            echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
+            echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
+            echo "CONFIG_CHECKPOINT_RESTORE=y" >> "$defconfig"
+            echo "CONFIG_RANDOMIZE_BASE=n" >> "$defconfig"
+            echo "CONFIG_BPF=y" >> "$defconfig"
+            echo "CONFIG_HAVE_KPROBES=y" >> "$defconfig"
+            echo "CONFIG_KRETPROBES=y" >> "$defconfig"
+            echo "CONFIG_HAVE_KRETPROBES=y" >> "$defconfig"
+            echo "CONFIG_SHADOW_CALL_STACK=n" >> "$defconfig"
+            echo "CONFIG_ROP_PROTECTION_NONE=y" >> "$defconfig"
+            echo "CONFIG_FTRACE_SYSCALLS=y" >> "$defconfig"
+            echo "CONFIG_FUNCTION_TRACER=y" >> "$defconfig"
+            echo "CONFIG_HAVE_DYNAMIC_FTRACE=y" >> "$defconfig"
+            echo "CONFIG_DYNAMIC_FTRACE=y" >> "$defconfig"
+            echo "CONFIG_DEBUG_PREEMPT=y" >> "$defconfig"
+            echo "CONFIG_PREEMPTIRQ_EVENTS=y" >> "$defconfig"
+            echo "CONFIG_PROVE_LOCKING=n" >> "$defconfig"
+            echo "CONFIG_LOCKDEP=n" >> "$defconfig"
+            echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
+            echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
+            echo "CONFIG_NET_SCH_SFQ=y" >> "$defconfig"
+            echo "CONFIG_NET_ACT_POLICE=y" >> "$defconfig"
+            echo "CONFIG_NET_ACT_GACT=y" >> "$defconfig"
+            echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
+            echo "CONFIG_PREEMPTION=y" >> "$defconfig"
+            echo "CONFIG_BPF_RAW_TP=y" >> "$defconfig"
+
 
 
           
@@ -381,6 +376,8 @@ jobs:
             perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "\$\{KERNELVERSION\}-${{ inputs.android_version }}-Wild"/s' ./common/scripts/setlocalversion
           elif [ "${{ matrix.build_type }}" = "make" ]; then
             perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\-${{ inputs.android_version }}-Wild"/s' ./common/scripts/setlocalversion
+          elif [ "${{ matrix.build_type }}" = "normal" ] && [ "${{ inputs.kernel_version }}" = "6.6" ]; then
+            perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}-Wild"/s' ./common/scripts/setlocalversion
           elif [ "${{ matrix.build_type }}" = "normal" ]; then
             perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\$res-Wild"/s' ./common/scripts/setlocalversion
           fi
@@ -394,15 +391,15 @@ jobs:
 
       - name: Build
         if: ${{ matrix.build_type == 'normal' }}
-        run: |
+        run : |
           set -e
           set -x
           cd "$CONFIG"
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
-            BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
-            tools/bazel build --config=fast //common:kernel_aarch64_dist || exit 1
+            tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
 
       - name: Detect Clang Version from Configs
@@ -444,6 +441,7 @@ jobs:
           fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
           echo "CLANG_BIN_PATH=$CLANG_BIN_PATH" >> $GITHUB_ENV
+
 
       - name: Build Kernel
         if: ${{ matrix.build_type == 'make' }}
@@ -497,42 +495,6 @@ jobs:
           
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
-
-      - name: Make check pass (copy generated modules.order into tracked path)
-        run: |
-          set -euo pipefail
-
-          DST="common/android/gki_aarch64_modules"
-          mkdir -p "$(dirname "$DST")"
-
-          echo "CONFIG='${CONFIG:-}'"
-          # Preferred exact path (uses $CONFIG). Adjust the androidX/version segment if your build uses different naming.
-          CANDIDATE1="$GITHUB_WORKSPACE/${CONFIG:-android12-5.10}/out/android12-5.10/common/modules.order"
-          echo "Checking preferred candidate: $CANDIDATE1"
-          if [ -f "$CANDIDATE1" ]; then
-            cp -v "$CANDIDATE1" "$DST"
-            echo "Copied preferred candidate -> $DST"
-            ls -l "$DST"
-          else
-            echo "Preferred not found — searching for modules.order under */out/android12-5.10/common/ ..."
-            FOUND=""
-            while IFS= read -r -d $'\0' f; do
-              echo "  candidate: $f"
-              FOUND="$f"
-              break
-            done < <(find "$GITHUB_WORKSPACE" -type f -path "*/out/android12-5.10/common/modules.order" -print0 || true)
-
-            if [ -n "$FOUND" ]; then
-              echo "Using found file: $FOUND"
-              cp -v "$FOUND" "$DST"
-              ls -l "$DST"
-            else
-              echo "::warning::No modules.order found at expected locations."
-              echo "Listing any modules.order files in workspace for debug:"
-              find "$GITHUB_WORKSPACE" -type f -name "modules.order" -print -exec ls -l {} \; || true
-              echo "::warning::Could not copy modules.order - checker may still fail. Adjust paths or placement of this step."
-            fi
-          fi
 
       - name: Create AK3 ZIP
         run: |
