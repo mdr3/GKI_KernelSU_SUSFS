@@ -344,8 +344,8 @@ jobs:
           echo "CONFIG_DEBUG_INFO_NONE=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF4=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF4=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF5=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_COMPRESSED_NONE=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_COMPRESSED_ZLIB=n" >> "$defconfig"
@@ -354,6 +354,9 @@ jobs:
           echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
           echo "CONFIG_PREEMPTION=y" >> "$defconfig"
           echo "CONFIG_GCC_PLUGIN_RANDSTRUCT=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
+
+
           
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
