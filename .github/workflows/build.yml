@@ -104,7 +104,7 @@ jobs:
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
           fi
           
-          $REPO --trace sync -c -j$(nproc --ignore=3) --no-tags --fail-fast
+          $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
 
       - name: Extract Actual Sublevel for LTS Builds
         if: inputs.sub_level == 'X'
