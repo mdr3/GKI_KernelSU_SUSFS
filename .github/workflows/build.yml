@@ -302,7 +302,11 @@ jobs:
           echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
+          echo "CONFIG_CFI_CLANG=y" >> "$defconfig"
+          echo "CONFIG_CFI_PERMISSIVE=y" >> "$defconfig"
 
+
+          
           
           # eBPF and Debugging Configuration
           echo "CONFIG_KPROBES=y" >> "$defconfig"
@@ -317,8 +321,6 @@ jobs:
           echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
           echo "CONFIG_BPF_LSM=y" >> "$defconfig"
           echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
-          echo "CONFIG_CFI_CLANG=n" >> "$defconfig"
-          echo "CONFIG_CFI_PERMISSIVE=n" >> "$defconfig"
           echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
           echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
           echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
