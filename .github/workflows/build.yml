@@ -315,7 +315,7 @@ jobs:
           echo "CONFIG_BPF_JIT=y" >> "$defconfig"
           echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
           echo "CONFIG_IKHEADERS=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_BTF=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_BTF=y" >> "$defconfig"
           echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
           echo "CONFIG_BPF_LSM=y" >> "$defconfig"
           echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
