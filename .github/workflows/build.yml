@@ -297,7 +297,10 @@ jobs:
           # Build Optimization Configuration
           echo "CONFIG_LTO_CLANG_THIN=n" >> "$defconfig"
           echo "CONFIG_LTO_CLANG=n" >> "$defconfig"
+          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=n" >> "$defconfig"
+          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
 
+          
           # eBPF and Debugging Configuration
           echo "CONFIG_KPROBES=y" >> "$defconfig"
           echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
