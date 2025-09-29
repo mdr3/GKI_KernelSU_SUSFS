@@ -78,7 +78,17 @@ jobs:
             fi
             
             NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
-    
+            
+            if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+              suffix=$(echo "$NEW_TAG" | awk -F'-r' '{print $2}')
+              base=$(echo "$NEW_TAG" | awk -F'-r' '{print $1}')
+              while git rev-parse "$NEW_TAG" >/dev/null 2>&1; do
+                suffix=$((suffix + 1))
+                NEW_TAG="${base}-r${suffix}"
+                echo "Tag '$NEW_TAG' already exists, trying next: $NEW_TAG"
+              done
+            fi
+            
             echo "New tag: $NEW_TAG"
             echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
 
