@@ -310,7 +310,7 @@ jobs:
           echo "CONFIG_BPF_JIT=y" >> "$defconfig"
           echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
           echo "CONFIG_IKHEADERS=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_BTF=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_BTF=n" >> "$defconfig"
           echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
           echo "CONFIG_BPF_LSM=y" >> "$defconfig"
           echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
@@ -481,20 +481,6 @@ jobs:
           fi
           
           cd "$KERNEL_PATH/common" || exit 1
-          
-          echo "Clang version:"
-          $KERNEL_PATH/prebuilts/clang/host/linux-x86/${{ env.CLANG_VERSION }}/bin/clang --version
-          echo "pahole version:"
-          $KERNEL_PATH/prebuilts/kernel-build-tools/linux-x86/bin/pahole --version
-          echo "LLD version:"
-          ld.lld --version
-          if [[ "$($KERNEL_PATH/prebuilts/kernel-build-tools/linux-x86/bin/pahole --version | grep -o '[0-9]\.[0-9]\+')" < "1.22" ]]; then
-            echo "Installing newer pahole..."
-            sudo apt-get update
-            sudo apt-get install -y pahole
-            echo "System pahole version:"
-            /usr/bin/pahole --version
-          fi
           
           MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-android- \
             RUSTC=$KERNEL_PATH/prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
