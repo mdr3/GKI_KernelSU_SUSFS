@@ -344,8 +344,8 @@ jobs:
           echo "CONFIG_DEBUG_INFO_NONE=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=n" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF4=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF5=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF4=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_COMPRESSED_NONE=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_COMPRESSED_ZLIB=n" >> "$defconfig"
@@ -490,8 +490,8 @@ jobs:
             MAKE_ARGS="LLVM_IAS=1 $MAKE_ARGS"
           fi
           
-          make -j$(nproc --ignore=6) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
-          make -j$(nproc --ignore=6) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" || exit 1
+          make -j$(nproc --ignore=2) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
+          make -j$(nproc --ignore=2) O=out LTO=none $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" || exit 1
 
       - name: Make check pass (copy generated modules.order into tracked path)
         run: |
