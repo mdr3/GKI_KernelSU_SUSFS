@@ -318,8 +318,8 @@ jobs:
             echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
             echo "CONFIG_UPROBES=y" >> "$defconfig"
             echo "CONFIG_UPROBE_EVENT=y" >> "$defconfig"
-            echo "CONFIG_NET_CLS_BPF=m" >> "$defconfig"
-            echo "CONFIG_NET_ACT_BPF=m" >> "$defconfig"
+            echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
+            echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
             echo "CONFIG_BPF_JIT=y" >> "$defconfig"
             echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
             echo "CONFIG_IKHEADERS=y" >> "$defconfig"
@@ -354,6 +354,12 @@ jobs:
             echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
             echo "CONFIG_PREEMPTION=y" >> "$defconfig"
             echo "CONFIG_BPF_RAW_TP=y" >> "$defconfig"
+            echo "CONFIG_NET_CLS_ACT=y" >> "$defconfig"
+            echo "CONFIG_NETFILTER_NETLINK=y" >> "$defconfig"
+            echo "CONFIG_RTNETLINK=y" >> "$defconfig"
+            echo "CONFIG_NET=y" >> "$defconfig"
+            echo "CONFIG_NETLINK=y" >> "$defconfig"
+            
 
 
 
