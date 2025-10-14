@@ -239,7 +239,7 @@ jobs:
           cp "../../../kernel_patches/samsung/min_kdp/min_kdp.c" min_kdp.c
           echo "obj-y += min_kdp.o" >> Makefile
 
-      - name: Apply Kernel Configuration
+       - name: Apply Kernel Configuration
         run: |
           cd "$CONFIG"
           
@@ -282,6 +282,7 @@ jobs:
           echo "CONFIG_IP_SET_HASH_NETNET=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETPORT=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> "$defconfig"
+          
           # SUSFS Configuration
           echo "CONFIG_KSU_SUSFS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> "$defconfig"
@@ -306,63 +307,56 @@ jobs:
           echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
           
-          # Build Optimization Configuration
-          echo "CONFIG_LTO_CLANG_THIN=y" >> "$defconfig"
-          echo "CONFIG_LTO_CLANG=y" >> "$defconfig"
-          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "$defconfig"
-          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "$defconfig"
+          # BTF and Debug Info Configuration
+          echo "CONFIG_DEBUG_INFO=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_BTF=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"  # Required for modern kernels
+          echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"  # Ensure full debug info for BTF
           
-          # epbf
-            echo "CONFIG_KPROBES=y" >> "$defconfig"
-            echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
-            echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
-            echo "CONFIG_UPROBES=y" >> "$defconfig"
-            echo "CONFIG_UPROBE_EVENT=y" >> "$defconfig"
-            echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
-            echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
-            echo "CONFIG_BPF_JIT=y" >> "$defconfig"
-            echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
-            echo "CONFIG_IKHEADERS=y" >> "$defconfig"
-            echo "CONFIG_DEBUG_INFO_BTF=n" >> "$defconfig"
-            echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
-            echo "CONFIG_BPF_LSM=y" >> "$defconfig"
-            echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
-            echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
-            echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
-            echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
-            echo "CONFIG_CHECKPOINT_RESTORE=y" >> "$defconfig"
-            echo "CONFIG_RANDOMIZE_BASE=n" >> "$defconfig"
-            echo "CONFIG_BPF=y" >> "$defconfig"
-            echo "CONFIG_HAVE_KPROBES=y" >> "$defconfig"
-            echo "CONFIG_KRETPROBES=y" >> "$defconfig"
-            echo "CONFIG_HAVE_KRETPROBES=y" >> "$defconfig"
-            echo "CONFIG_SHADOW_CALL_STACK=n" >> "$defconfig"
-            echo "CONFIG_ROP_PROTECTION_NONE=y" >> "$defconfig"
-            echo "CONFIG_FTRACE_SYSCALLS=y" >> "$defconfig"
-            echo "CONFIG_FUNCTION_TRACER=y" >> "$defconfig"
-            echo "CONFIG_HAVE_DYNAMIC_FTRACE=y" >> "$defconfig"
-            echo "CONFIG_DYNAMIC_FTRACE=y" >> "$defconfig"
-            echo "CONFIG_DEBUG_PREEMPT=y" >> "$defconfig"
-            echo "CONFIG_PREEMPTIRQ_EVENTS=y" >> "$defconfig"
-            echo "CONFIG_PROVE_LOCKING=n" >> "$defconfig"
-            echo "CONFIG_LOCKDEP=n" >> "$defconfig"
-            echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
-            echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
-            echo "CONFIG_NET_SCH_SFQ=y" >> "$defconfig"
-            echo "CONFIG_NET_ACT_POLICE=y" >> "$defconfig"
-            echo "CONFIG_NET_ACT_GACT=y" >> "$defconfig"
-            echo "CONFIG_DEBUG_KERNEL=y" >> "$defconfig"
-            echo "CONFIG_PREEMPTION=y" >> "$defconfig"
-            echo "CONFIG_BPF_RAW_TP=y" >> "$defconfig"
-            echo "CONFIG_NET_CLS_ACT=y" >> "$defconfig"
-            echo "CONFIG_NETFILTER_NETLINK=y" >> "$defconfig"
-            echo "CONFIG_RTNETLINK=y" >> "$defconfig"
-            echo "CONFIG_NET=y" >> "$defconfig"
-            echo "CONFIG_NETLINK=y" >> "$defconfig"
-            
-
-
-
+          # Disable LTO to avoid conflicts with BTF
+          echo "CONFIG_LTO_CLANG=n" >> "$defconfig"
+          echo "CONFIG_LTO_CLANG_THIN=n" >> "$defconfig"
+          echo "CONFIG_LTO_NONE=y" >> "$defconfig"
+          echo "CONFIG_LTO=n" >> "$defconfig"
+          
+          # eBPF and Related Configurations (already present, but ensuring completeness)
+          echo "CONFIG_KPROBES=y" >> "$defconfig"
+          echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
+          echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
+          echo "CONFIG_UPROBES=y" >> "$defconfig"
+          echo "CONFIG_UPROBE_EVENT=y" >> "$defconfig"
+          echo "CONFIG_NET_CLS_BPF=y" >> "$defconfig"
+          echo "CONFIG_NET_ACT_BPF=y" >> "$defconfig"
+          echo "CONFIG_BPF_JIT=y" >> "$defconfig"
+          echo "CONFIG_HAVE_EBPF_JIT=y" >> "$defconfig"
+          echo "CONFIG_IKHEADERS=y" >> "$defconfig"
+          echo "CONFIG_BPF_EVENTS=y" >> "$defconfig"
+          echo "CONFIG_BPF_LSM=y" >> "$defconfig"
+          echo "CONFIG_NETFILTER_XT_MATCH_BPF=y" >> "$defconfig"
+          echo "CONFIG_IRQSOFF_TRACER=y" >> "$defconfig"
+          echo "CONFIG_PREEMPT_TRACER=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_FS=y" >> "$defconfig"
+          echo "CONFIG_CHECKPOINT_RESTORE=y" >> "$defconfig"
+          echo "CONFIG_RANDOMIZE_BASE=n" >> "$defconfig"
+          echo "CONFIG_BPF=y" >> "$defconfig"
+          echo "CONFIG_HAVE_KPROBES=y" >> "$defconfig"
+          echo "CONFIG_KRETPROBES=y" >> "$defconfig"
+          echo "CONFIG_HAVE_KRETPROBES=y" >> "$defconfig"
+          echo "CONFIG_SHADOW_CALL_STACK=n" >> "$defconfig"
+          echo "CONFIG_ROP_PROTECTION_NONE=y" >> "$defconfig"
+          echo "CONFIG_FTRACE_SYSCALLS=y" >> "$defconfig"
+          echo "CONFIG_FUNCTION_TRACER=y" >> "$defconfig"
+          echo "CONFIG_HAVE_DYNAMIC_FTRACE=y" >> "$defconfig"
+          echo "CONFIG_DYNAMIC_FTRACE=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_PREEMPT=y" >> "$defconfig"
+          echo "CONFIG_PREEMPTIRQ_EVENTS=y" >> "$defconfig"
+          echo "CONFIG_PROVE_LOCKING=n" >> "$defconfig"
+          echo "CONFIG_LOCKDEP=n" >> "$defconfig"
+          echo "CONFIG_NET_CLS_ACT=y" >> "$defconfig"
+          echo "CONFIG_NETFILTER_NETLINK=y" >> "$defconfig"
+          echo "CONFIG_RTNETLINK=y" >> "$defconfig"
+          echo "CONFIG_NET=y" >> "$defconfig"
+          echo "CONFIG_NETLINK=y" >> "$defconfig"
           
           # Remove check_defconfig
           sed -i 's/check_defconfig//' ./common/build.config.gki
@@ -499,8 +493,24 @@ jobs:
             MAKE_ARGS="LLVM_IAS=1 $MAKE_ARGS"
           fi
           
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
+          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" gki_defconfig Image Image.gz Image.lz4 || exit 1
+          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" || exit 1
+          
+          # Generate BTF information using pahole
+          cd "$KERNEL_PATH/common/out" || exit 1
+          $KERNEL_PATH/prebuilts/kernel-build-tools/linux-x86/bin/pahole -J -j \
+            --btf_features=encode_force \
+            --btf_features=var \
+            --btf_features=float \
+            --btf_features=enum64 \
+            --btf_features=decl_tag \
+            --btf_features=type_tag \
+            --btf_features=optimized_func \
+            --btf_features=consistent_func \
+            --btf_features=decl_tag_kfuncs \
+            --btf_features=attributes \
+            --lang_exclude=rust \
+            vmlinux || exit 1
 
       - name: Create AK3 ZIP
         run: |
