@@ -758,9 +758,13 @@ jobs:
           rm -rf out/ramdisk_new
           mkdir -p out/ramdisk_new/lib/modules
           
-          # Add stripped modules to the new ramdisk directory
+          # Add stripped modules to the new ramdisk directory if they exist
           echo "Adding stripped modules to ramdisk..."
-          cp -r $CONFIG/common/out/lib/modules/* out/ramdisk_new/lib/modules/
+          if [ -d "$CONFIG/common/out/modules/lib/modules" ] && ls $CONFIG/common/out/modules/lib/modules/*.ko >/dev/null 2>&1; then
+                  cp -r $CONFIG/common/out/modules/lib/modules/* out/ramdisk_new/lib/modules/
+          else
+                  echo "Warning: No kernel modules found in $CONFIG/common/out/modules/lib/modules, proceeding without modules"
+          fi
           
           # Repack the ramdisk
           echo "Repacking ramdisk..."
@@ -782,7 +786,6 @@ jobs:
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk_new.gz --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-lz4.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-boot-lz4.img
-
           
       - name: Android 13/14/15 boot image build script
         if: >-
