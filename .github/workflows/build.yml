@@ -597,12 +597,7 @@ jobs:
                   exit 1
           fi
           
-          # Update pahole to ensure latest version
-          sudo apt update
-          sudo apt install -y software-properties-common
-          sudo add-apt-repository ppa:dwarves/ppa -y
-          sudo apt update
-          sudo apt install -y dwarves
+         
           
           # Check pahole version
           pahole --version
