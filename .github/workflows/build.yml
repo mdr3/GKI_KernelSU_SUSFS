@@ -21,6 +21,10 @@ on:
       revision:
         required: false
         type: string
+      apply_patches:
+        required: false
+        type: string
+        default: 'true'  # Default to applying patches
 
 jobs:
   build-gki:
@@ -31,19 +35,6 @@ jobs:
         build_type: ["make"]
 
     steps:
-      # # - name: Maximize Build Space
-        # uses: AdityaGarg8/remove-unwanted-software@v5
-        # with:
-          # remove-dotnet: 'true'          # Frees ~2 GB
-          # remove-android: 'true'         # Frees ~9 GB
-          # remove-haskell: 'true'         # Frees ~5.2 GB
-          # remove-codeql: 'true'          # Frees ~5.4 GB
-          # remove-docker-images: 'true'   # Frees ~3.2 GB
-          # remove-large-packages: 'true'  # Frees ~3.1 GB
-          # remove-swapfile: 'true'        # Frees ~4 GB
-          # remove-cached-tools: 'false'   # Avoid unless confirmed safe
-          # verbose: 'true'                # Enable detailed logging
-          
       - name: Set CONFIG Environment Variable
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -56,8 +47,8 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y libelf-dev clang libssl-dev build-essential git device-tree-compiler lz4 xz-utils zlib1g-dev gcc g++ python3 python-is-python3 p7zip-full android-sdk-libsparse-utils erofs-utils \
             default-jdk git gnupg flex bison gperf build-essential zip curl libc6-dev libncurses-dev libx11-dev libreadline-dev libgl1 libgl1-mesa-dev \
-                python3 make sudo gcc g++ bc grep tofrodos python3-markdown libxml2-utils xsltproc zlib1g-dev python-is-python3 libc6-dev libtinfo6 \
-                make repo cpio kmod openssl libelf-dev pahole libssl-dev libarchive-tools zstd rsync --fix-missing
+            python3 make sudo gcc g++ bc grep tofrodos python3-markdown libxml2-utils xsltproc zlib1g-dev python-is-python3 libc6-dev libtinfo6 \
+            make repo cpio kmod openssl libelf-dev pahole libssl-dev libarchive-tools zstd rsync --fix-missing
           
           AOSP_MIRROR=https://android.googlesource.com
           BRANCH=main-kernel-2025
@@ -133,7 +124,7 @@ jobs:
           fi
 
       - name: Apply glibc 2.38 Compatibility Fix
-        if: inputs.android_version == 'android14' && inputs.kernel_version == '6.1'
+        if: inputs.apply_patches == 'true' && inputs.android_version == 'android14' && inputs.kernel_version == '6.1'
         run: |
           if [ ! -e build/build.sh ]; then 
             GLIBC_VERSION=$(ldd --version 2>/dev/null | head -n 1 | awk '{print $NF}') 
@@ -142,8 +133,8 @@ jobs:
             fi 
           fi
 
-      - name: Fix Less Then 6.6.50 Builds
-        if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
+      - name: Fix Less Than 6.6.50 Builds
+        if: inputs.apply_patches == 'true' && inputs.android_version == 'android15' && inputs.kernel_version == '6.6'
         run: |
           cd "$CONFIG/common"
           if ! grep -qxF '#include <trace/hooks/fs.h>' ./fs/namespace.c; then
@@ -151,17 +142,19 @@ jobs:
           fi
 
       - name: Apply ptrace patch for older kernels
-        if: fromJSON(inputs.kernel_version) < 5.16
+        if: inputs.apply_patches == 'true' && fromJSON(inputs.kernel_version) < 5.16
         run: |
           cd "$CONFIG/common"
           patch -p1 -F 3 < "../../kernel_patches/gki_ptrace.patch"
 
       - name: Add KernelSU
+        if: inputs.apply_patches == 'true'
         run: |
           cd "$CONFIG"
           curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
-          
+
       - name: Apply SUSFS Patches for KernelSU Variants
+        if: inputs.apply_patches == 'true'
         run: |
           cd "$CONFIG"
           
@@ -176,19 +169,12 @@ jobs:
           # Apply KSU integration patches
           cd ./Wild_KSU
           cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
-          #cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/10_enable_susfs_for_ksu.patch ./
           patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
           
           # Apply compatibility fixes
           cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
           patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
           
-          ## Skip fix_rules.c.patch for Android 14 with kernel 6.1
-          #if [ "${{ inputs.android_version }}" != "android14" ] && [ "${{ inputs.kernel_version }}" != "6.1" ]; then
-          #  cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
-          #  patch -p1 --forward < fix_rules.c.patch
-          #fi
-
           cp ../../kernel_patches/wild/susfs_fix_patches/v1.5.9/fix_sucompat.c.patch ./
           patch -p1 --forward < fix_sucompat.c.patch
 
@@ -196,33 +182,34 @@ jobs:
           patch -p1 --forward < fix_kernel_compat.c.patch
 
       - name: Getting KernelSU Version
+        if: inputs.apply_patches == 'true'
         run: |
           cd "$CONFIG/Wild_KSU/kernel"
           BASE_VERSION=10200
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          
+
       - name: Apply Hooks Patches
+        if: inputs.apply_patches == 'true'
         run: |
           cd "$CONFIG/common"
           cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
           patch -p1 --forward -F 3 < scope_min_manual_hooks_v1.4.patch
 
       - name: Apply Module Symbol Version Fix Patch
+        if: inputs.apply_patches == 'true'
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" ]]; then
             cd "$CONFIG/common/kernel/module"
-            #sed -i 's/pr_warn("%s: disagrees about version of symbol %s\\n"/pr_warn("%s: disagrees about version of symbol %s, but ignore...\\n"/' version.c
             sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' version.c
           else
             cd "$CONFIG/common/kernel"
-            #sed -i 's/pr_warn("%s: disagrees about version of symbol %s\\n"/pr_warn("%s: disagrees about version of symbol %s, but ignore...\\n"/' module.c
             sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' module.c
           fi
 
       - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
-        if: ${{ ( inputs.kernel_version == '6.6' ) }}
+        if: inputs.apply_patches == 'true' && inputs.kernel_version == '6.6'
         run: |
           SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
           echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
@@ -247,9 +234,36 @@ jobs:
           
           echo "Applying kernel configurations one by one..."
           
-          # KernelSU Core Configuration
-          echo "CONFIG_KSU=y" >> "$defconfig"
-          echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
+          # Apply KernelSU configurations only if apply_patches is true
+          if [ "${{ inputs.apply_patches }}" = "true" ]; then
+            # KernelSU Core Configuration
+            echo "CONFIG_KSU=y" >> "$defconfig"
+            echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$defconfig"
+            
+            # SUSFS Configuration
+            echo "CONFIG_KSU_SUSFS=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> "$defconfig"
+            
+            # SUSFS Auto Mount Features
+            echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> "$defconfig"
+            
+            # SUSFS Advanced Features
+            echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> "$defconfig"
+            
+            # SUSFS Debugging and Security
+            echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
+            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
+          fi
           
           # Mountify Support
           echo "CONFIG_TMPFS_XATTR=y" >> "$defconfig"
@@ -283,35 +297,11 @@ jobs:
           echo "CONFIG_IP_SET_HASH_NETPORT=y" >> "$defconfig"
           echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> "$defconfig"
           
-          # SUSFS Configuration
-          echo "CONFIG_KSU_SUSFS=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> "$defconfig"
-          
-          # SUSFS Auto Mount Features
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT=y" >> "$defconfig"
-          
-          # SUSFS Advanced Features
-          echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SUS_OVERLAYFS=n" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> "$defconfig"
-          
-          # SUSFS Debugging and Security
-          echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> "$defconfig"
-          echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$defconfig"
-          
           # BTF and Debug Info Configuration
           echo "CONFIG_DEBUG_INFO=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_BTF=y" >> "$defconfig"
-          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"  # Required for modern kernels
-          echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"  # Ensure full debug info for BTF
+          echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"
           
           # Disable LTO to avoid conflicts with BTF
           echo "CONFIG_LTO_CLANG=n" >> "$defconfig"
@@ -319,7 +309,7 @@ jobs:
           echo "CONFIG_LTO_NONE=y" >> "$defconfig"
           echo "CONFIG_LTO=n" >> "$defconfig"
           
-          # eBPF and Related Configurations (already present, but ensuring completeness)
+          # eBPF and Related Configurations
           echo "CONFIG_KPROBES=y" >> "$defconfig"
           echo "CONFIG_KPROBE_EVENT=y" >> "$defconfig"
           echo "CONFIG_BPF_SYSCALL=y" >> "$defconfig"
@@ -368,10 +358,10 @@ jobs:
           perl -pi -e 's/-dirty//' ./common/scripts/setlocalversion
           perl -pi -e 's/-maybe-dirty//g' ./build/kernel/kleaf/impl/stamp.bzl
 
-          #Set Kernel Timestamp
+          # Set Kernel Timestamp
           perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT Sun Apr 20 04:20:00 UTC 2025"}' ./common/scripts/mkcompile_h
           
-          #Set Kernel Name
+          # Set Kernel Name
           if [ "${{ matrix.build_type }}" = "make" ] && [ "${{ inputs.kernel_version }}" = "6.6" ]; then
             perl -0777 -pi -e 's/(echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}")/echo "\$\{KERNELVERSION\}-${{ inputs.android_version }}-Wild"/s' ./common/scripts/setlocalversion
           elif [ "${{ matrix.build_type }}" = "make" ]; then
@@ -382,16 +372,16 @@ jobs:
             perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\$res-Wild"/s' ./common/scripts/setlocalversion
           fi
 
-          #Set Kernel Timestamp
+          # Set Kernel Timestamp
           perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Sun Apr 20 04:20:00 UTC 2025"/' ./common/init/Makefile
               
-          #Remove Abi Exports and Error
+          # Remove Abi Exports and Error
           rm -rf ./common/android/abi_gki_protected_exports_*
           perl -pi -e 's/^\s*"protected_exports_list"\s*:\s*"android\/abi_gki_protected_exports_aarch64",\s*$//;' ./common/BUILD.bazel
 
       - name: Build
         if: ${{ matrix.build_type == 'normal' }}
-        run : |
+        run: |
           set -e
           set -x
           cd "$CONFIG"
@@ -441,7 +431,6 @@ jobs:
           fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
           echo "CLANG_BIN_PATH=$CLANG_BIN_PATH" >> $GITHUB_ENV
-
 
       - name: Build Kernel
         if: ${{ matrix.build_type == 'make' }}
@@ -511,6 +500,9 @@ jobs:
             --btf_features=attributes \
             --lang_exclude=rust \
             vmlinux || exit 1
+          
+          # Install kernel modules with symbol stripping
+          sudo make -j$(nproc --all) O=out $MAKE_ARGS INSTALL_MOD_STRIP=1 modules_install || exit 1
 
       - name: Create AK3 ZIP
         run: |
@@ -528,7 +520,7 @@ jobs:
 
           cd AnyKernel3
           
-          # Use actual sublevel for LTS builds if available
+          # Use actual sublevel for naming
           SUBLEVEL_FOR_NAME="${{ inputs.sub_level }}"
           if [ -n "$ACTUAL_SUBLEVEL" ]; then
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
@@ -658,7 +650,7 @@ jobs:
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-lz4.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-boot-lz4.img
-          
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
