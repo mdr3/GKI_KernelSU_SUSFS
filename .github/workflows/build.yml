@@ -261,6 +261,11 @@ jobs:
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+      - name: Set KSUVER Default
+        run: |
+          if [ -z "$KSUVER" ]; then
+            echo "KSUVER=0" >> $GITHUB_ENV
+          fi
       - name: Apply Hooks Patches
         if: inputs.apply_patches == 'true'
         run: >
@@ -638,9 +643,9 @@ jobs:
           fi
 
 
-          # Use default KSUVER if not set
+          # Use KSUVER (set to 0 if unset)
 
-          ZIP_NAME="WKSU-${KSUVER:-0}-${{ inputs.android_version }}-${{
+          ZIP_NAME="WKSU-$KSUVER-${{ inputs.android_version }}-${{
           inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
           }}-AnyKernel3.zip"
 
@@ -778,7 +783,7 @@ jobs:
           * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key
           $BOOT_SIGN_KEY_PATH
 
-          cp ./boot.img ../WKSU-${KSUVER:-0}-${{ inputs.android_version }}-${{
+          cp ./boot.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{
           inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
           }}-boot.img
 
@@ -793,9 +798,9 @@ jobs:
           * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key
           $BOOT_SIGN_KEY_PATH
 
-          cp ./boot-gz.img ../WKSU-${KSUVER:-0}-${{ inputs.android_version
-          }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{
-          inputs.os_patch_level }}-boot-gz.img
+          cp ./boot-gz.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{
+          inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
+          }}-boot-gz.img
 
 
           echo "Building boot-lz4.img"
@@ -808,9 +813,9 @@ jobs:
           * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key
           $BOOT_SIGN_KEY_PATH
 
-          cp ./boot-lz4.img ../WKSU-${KSUVER:-0}-${{ inputs.android_version
-          }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{
-          inputs.os_patch_level }}-boot-lz4.img
+          cp ./boot-lz4.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{
+          inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
+          }}-boot-lz4.img
       - name: Android 13/14/15 boot image build script
         if: >-
           ${{ inputs.android_version == 'android13' || inputs.android_version ==
@@ -836,7 +841,7 @@ jobs:
           * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key
           $BOOT_SIGN_KEY_PATH
 
-          cp ./boot.img ../WKSU-${KSUVER:-0}-${{ inputs.android_version }}-${{
+          cp ./boot.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{
           inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
           }}-boot.img
 
@@ -849,9 +854,9 @@ jobs:
           * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key
           $BOOT_SIGN_KEY_PATH
 
-          cp ./boot-gz.img ../WKSU-${KSUVER:-0}-${{ inputs.android_version
-          }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{
-          inputs.os_patch_level }}-boot-gz.img
+          cp ./boot-gz.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{
+          inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
+          }}-boot-gz.img
 
 
           echo "Building boot-lz4.img"
@@ -862,14 +867,14 @@ jobs:
           * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key
           $BOOT_SIGN_KEY_PATH
 
-          cp ./boot-lz4.img ../WKSU-${KSUVER:-0}-${{ inputs.android_version
-          }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{
-          inputs.os_patch_level }}-boot-lz4.img
+          cp ./boot-lz4.img ../WKSU-$KSUVER-${{ inputs.android_version }}-${{
+          inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level
+          }}-boot-lz4.img
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: >-
-            WKSU-${{ env.KSUVER:-0 }}-${{ inputs.android_version }}-${{
+            WKSU-${{ env.KSUVER }}-${{ inputs.android_version }}-${{
             inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level
             }}-${{ inputs.os_patch_level }}-${{ matrix.build_type }}
           path: |
