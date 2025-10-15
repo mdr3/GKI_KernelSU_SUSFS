@@ -588,8 +588,21 @@ jobs:
                   ls -l "$KERNEL_PATH/common/out/include/generated" "$KERNEL_PATH/common/out/include/config"
                   exit 1
           fi
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" vmlinux Image Image.gz Image.lz4 || exit 1
+          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" vmlinux Image Image.gz Image.lz4 modules || exit 1
           
+          # Verify modules.order exists
+          if [ ! -f "$KERNEL_PATH/common/out/modules.order" ]; then
+                  echo "Error: modules.order file not found in $KERNEL_PATH/common/out"
+                  ls -l "$KERNEL_PATH/common/out"
+                  exit 1
+          fi
+          
+          # Update pahole to ensure latest version
+          sudo apt update
+          sudo apt install -y software-properties-common
+          sudo add-apt-repository ppa:dwarves/ppa -y
+          sudo apt update
+          sudo apt install -y dwarves
           
           # Check pahole version
           pahole --version
@@ -609,7 +622,7 @@ jobs:
                   echo "Warning: pahole failed to generate BTF data, continuing build without BTF"
           }
           
-          # Install kernel modules with symbol stripping, ensuring correct output directory
+          # Install kernel modules with symbol stripping
           cd "$KERNEL_PATH/common" || exit 1
           sudo make -j$(nproc --all) O=out $MAKE_ARGS INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH="$KERNEL_PATH/common/out/modules" modules_install || exit 1
 
