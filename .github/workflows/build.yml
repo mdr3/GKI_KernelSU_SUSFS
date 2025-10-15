@@ -24,7 +24,7 @@ on:
       apply_patches:
         required: false
         type: string
-        default: 'true'  # Default to applying patches
+        default: 'false'  # Default to applying patches
 
 jobs:
   build-gki:
