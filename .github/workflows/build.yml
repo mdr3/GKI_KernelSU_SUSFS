@@ -52,7 +52,7 @@ jobs:
           erofs-utils \
             default-jdk git gnupg flex bison gperf build-essential zip curl libc6-dev libncurses-dev libx11-dev libreadline-dev libgl1 libgl1-mesa-dev \
             python3 make sudo gcc g++ bc grep tofrodos python3-markdown libxml2-utils xsltproc zlib1g-dev python-is-python3 libc6-dev libtinfo6 \
-            make repo cpio kmod openssl libelf-dev pahole libssl-dev libarchive-tools zstd rsync --fix-missing
+            make repo cpio kmod openssl dwarves libelf-dev pahole libssl-dev libarchive-tools zstd rsync --fix-missing
 
           AOSP_MIRROR=https://android.googlesource.com
 
@@ -379,6 +379,7 @@ jobs:
           echo "CONFIG_DEBUG_INFO_BTF=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_DWARF5=y" >> "$defconfig"
           echo "CONFIG_DEBUG_INFO_REDUCED=n" >> "$defconfig"
+          echo "CONFIG_DEBUG_INFO_FULL=y" >> "$defconfig"
 
           # Disable LTO to avoid conflicts with BTF
           echo "CONFIG_LTO_CLANG=n" >> "$defconfig"
@@ -594,19 +595,8 @@ jobs:
 
           cd "$KERNEL_PATH/common/out" || exit 1
 
-          pahole -J -j \
-            --btf_features=encode_force \
-            --btf_features=var \
-            --btf_features=float \
-            --btf_features=enum64 \
-            --btf_features=decl_tag \
-            --btf_features=type_tag \
-            --btf_features=optimized_func \
-            --btf_features=consistent_func \
-            --btf_features=decl_tag_kfuncs \
-            --btf_features=attributes \
-            --lang_exclude=rust \
-            vmlinux || exit 1
+          pahole -J -j --btf_features=encode_force,var,float,enum64 vmlinux
+
 
           # Install kernel modules with symbol stripping
 
