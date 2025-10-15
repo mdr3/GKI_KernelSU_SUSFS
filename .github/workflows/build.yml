@@ -524,16 +524,15 @@ jobs:
           fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
           echo "CLANG_BIN_PATH=$CLANG_BIN_PATH" >> $GITHUB_ENV
+
+          
       - name: Build Kernel
-        if: '${{ matrix.build_type == ''make'' }}'
-        run: >
+        if: ${{ matrix.build_type == 'make' }}
+        run: |
           KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG"
-
           CLANG_BIN_PATH="${{ env.CLANG_BIN_PATH }}"
-
           CLANG_VERSION="${{ env.CLANG_VERSION }}"
-
-
+          
           if [ -d "$CLANG_BIN_PATH" ] && [ -x "$CLANG_BIN_PATH/clang" ]; then
                   export PATH="$CLANG_BIN_PATH:$PATH"
                   SELECTED_CLANG="$CLANG_BIN_PATH/clang"
@@ -543,19 +542,15 @@ jobs:
           else
                   exit 1
           fi
-
-
+          
           LLVM_TOOLS="clang ld.lld llvm-ar llvm-objcopy llvm-objdump llvm-nm"
-
           MISSING_TOOLS=""
-
           for tool in $LLVM_TOOLS; do
                   if ! command -v $tool >/dev/null 2>&1; then
                     MISSING_TOOLS="$MISSING_TOOLS $tool"
                   fi
           done
-
-
+          
           if [ -n "$MISSING_TOOLS" ]; then
                   sudo apt-get update
                   sudo apt-get install -yq --no-install-recommends llvm
@@ -565,18 +560,14 @@ jobs:
                     fi
                   done
           fi
-
-
+          
           KERNEL_VERSION="${{ inputs.kernel_version }}"
-
           if [[ "$KERNEL_VERSION" == "5.10" ]]; then
                   USE_LLVM_IAS=true
           fi
-
-
+          
           cd "$KERNEL_PATH/common" || exit 1
-
-
+          
           MAKE_ARGS="LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-android- \
                   RUSTC=$KERNEL_PATH/prebuilts/rust/linux-x86/1.73.0b/bin/rustc \
                   PAHOLE=pahole \
@@ -584,67 +575,45 @@ jobs:
           if [[ -v USE_LLVM_IAS ]]; then
                   MAKE_ARGS="LLVM_IAS=1 $MAKE_ARGS"
           fi
-
-
+          
           # Ensure clean output directory
-
           rm -rf out/out
-
           mkdir -p out
-
-
+          
           # Build kernel configuration and verify
-
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2
-          -fno-stack-protector" gki_defconfig || exit 1
-
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2
-          -fno-stack-protector" oldconfig prepare || exit 1
-
-          if [ ! -f "$KERNEL_PATH/common/out/include/generated/autoconf.h" ] ||
-          [ ! -f "$KERNEL_PATH/common/out/include/config/auto.conf" ]; then
+          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" gki_defconfig || exit 1
+          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" oldconfig prepare || exit 1
+          if [ ! -f "$KERNEL_PATH/common/out/include/generated/autoconf.h" ] || [ ! -f "$KERNEL_PATH/common/out/include/config/auto.conf" ]; then
                   echo "Error: Kernel configuration files missing after make oldconfig prepare"
                   ls -l "$KERNEL_PATH/common/out/include/generated" "$KERNEL_PATH/common/out/include/config"
                   exit 1
           fi
-
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2
-          -fno-stack-protector" vmlinux Image Image.gz Image.lz4 || exit 1
-
-
+          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -fno-stack-protector" vmlinux Image Image.gz Image.lz4 || exit 1
+          
+          
           # Check pahole version
-
           pahole --version
-
-
+          
           # Verify vmlinux exists and has debug info
-
           if [ ! -f "$KERNEL_PATH/common/out/vmlinux" ]; then
                   echo "Error: vmlinux file not found in $KERNEL_PATH/common/out"
                   find "$KERNEL_PATH/common" -name vmlinux -type f || echo "No vmlinux found in any directory"
                   exit 1
           fi
-
           file "$KERNEL_PATH/common/out/vmlinux"
-
-          readelf -S "$KERNEL_PATH/common/out/vmlinux" | grep -E
-          '\.debug|\.zdebug' || echo "Warning: No debug sections found in
-          vmlinux"
-
-
+          readelf -S "$KERNEL_PATH/common/out/vmlinux" | grep -E '\.debug|\.zdebug' || echo "Warning: No debug sections found in vmlinux"
+          
           # Generate BTF information using system pahole
-
           cd "$KERNEL_PATH/common/out" || exit 1
-
           pahole -J vmlinux || {
                   echo "Warning: pahole failed to generate BTF data, continuing build without BTF"
           }
+          
+          # Install kernel modules with symbol stripping, ensuring correct output directory
+          cd "$KERNEL_PATH/common" || exit 1
+          sudo make -j$(nproc --all) O=out $MAKE_ARGS INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH="$KERNEL_PATH/common/out/modules" modules_install || exit 1
 
-
-          # Install kernel modules with symbol stripping
-
-          sudo make -j$(nproc --all) O=out $MAKE_ARGS INSTALL_MOD_STRIP=1
-          modules_install || exit 1
+          
       - name: Create AK3 ZIP
         run: >
           # Try different Image locations based on build type
