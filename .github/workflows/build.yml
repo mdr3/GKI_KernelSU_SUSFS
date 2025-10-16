@@ -23,7 +23,7 @@ permissions:
       apply_patches:
         required: false
         type: string
-        default: 'false'
+        default: 'true'
 jobs:
   build-gki:
     runs-on: self-hosted
