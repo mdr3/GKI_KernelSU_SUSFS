@@ -95,6 +95,7 @@ jobs:
       run: |
         mkdir -p "$GITHUB_WORKSPACE/kernel"
         mkdir -p "$GITHUB_WORKSPACE/git-repo"
+        sudo apt install dwarves pahole
         curl -L https://storage.googleapis.com/git-repo-downloads/repo -o "$GITHUB_WORKSPACE/git-repo/repo"
         chmod +x "$GITHUB_WORKSPACE/git-repo/repo"
         echo "$GITHUB_WORKSPACE/git-repo" >> "$GITHUB_PATH"
