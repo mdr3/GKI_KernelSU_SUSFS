@@ -331,7 +331,14 @@ jobs:
             tools/bazel build --config=fast --lto=none --defconfig_fragment=//common:arch/arm64/configs/wild_gki.fragment //common:kernel_aarch64_dist || exit 1
           fi
         fi
-
+    - name: Upload vmlinux directly
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ steps.extract.outputs.file_name }}-vmlinux
+        path: kernel/out/${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}/dist/vmlinux
+        if-no-files-found: warn
+        compression-level: 9
     - name: Prepare AnyKernel3 Zip
       run: |
         # Copy Image from normal build locations
